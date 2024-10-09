@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"log"
+	"os"
 	"strconv"
 )
 
@@ -31,5 +32,15 @@ func LoadConfig() (*Config, error) {
 		DBHost: getEnv("DB_HOST", "localhost"),
 		DBPort: dbPort,
 		DBUser: getEnv("DB_USER", "postgres"),
+		DBPass: getEnv("DB_PASS", ""),
+		DBName: getEnv("DB_NAME", "aTES"),
+	}, nil
+}
+
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
 	}
+	return value
 }
