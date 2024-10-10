@@ -21,8 +21,10 @@ func NewHandlersGroup(db *sql.DB) *HandlersGroup {
 func (h *HandlersGroup) TaskHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		fmt.Fprintln(w, "Placeholder for fetching tasks logic.")
-		fmt.Println("Checking if case can get multi lines without braces.")
+		{
+			fmt.Fprintln(w, "Placeholder for fetching tasks logic.")
+			fmt.Println("Checking if case can get multi lines without braces.")
+		}
 	case "POST":
 		fmt.Fprintln(w, "Placeholder for creating a new task.")
 	default:
