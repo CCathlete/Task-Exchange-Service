@@ -22,7 +22,7 @@ func main() {
 	defer db.Close()
 
 	// Initialising HTTP handlers.
-	httpHandlers := infrastructure.NewHTTPHandlers(db)
+	httpHandlers := infrastructure.NewHandlersGroup(db)
 
 	// Setting up routs.
 	http.HandleFunc("/tasks", httpHandlers.TaskHandler)
