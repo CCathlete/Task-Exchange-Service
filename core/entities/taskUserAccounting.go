@@ -9,16 +9,18 @@ type Task struct {
 	Price          float64 // Cost or reward for completing the task.
 	CreationTime   string  // Timestamp of creation time.
 	CompletionTime string  // Timestamp of completion time.
+	LastUpdated    string  // Timestamp of last update time.
 }
 
 type User struct {
-	ID       int
-	Name     string
-	Email    string
-	Role     string
-	Balance  float64
-	JoinedAt string // Date of joining the company.
-	LeftAt   string // Date of departure, empty list if currently employed.
+	ID          int
+	Name        string
+	Email       string
+	Role        string
+	Balance     float64
+	JoinedAt    string // Date of joining the company.
+	LeftAt      string // Date of departure, empty list if currently employed.
+	LastUpdated string // Timestamp of last update time.
 }
 
 type AccountingRecord struct {

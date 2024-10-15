@@ -28,7 +28,6 @@ func InitDB(config *Config) (*sql.DB, error) {
 }
 
 // Creating a new task and returning its taskID.
-// TODO: Fix the time to include date only.
 func CreateTask(db *sql.DB, description string, assignedTo int) (int, error) {
 	price := rand.Float64()*20 + 20 // Random price between 20 and 40.
 	query := `INSERT INTO tasks (description, assigned_to, status, price, creation_time, completion_time)` +
@@ -46,6 +45,8 @@ func CreateTask(db *sql.DB, description string, assignedTo int) (int, error) {
 
 	return int(taskID), nil
 }
+
+func UpdateTask(db *sql.DB, description, status string, taskID, assignedTo int, price float64, isCompleted bool) error
 
 // Getting tasks that are assigned to a specific user.
 func GetTasks(db *sql.DB, userID int) ([]entities.Task, error) {
@@ -72,4 +73,9 @@ func CreateUser(db *sql.DB, name, email, role, joinedAt string) (int, error) {
 	return userID, nil
 }
 
-func GetUser(db *sql.DB, name, email, role string) (entities.User, error)
+// We use ID or cross role, name and email to find the correct user.
+func GetUser(db *sql.DB, userID int, name, email, role string) (entities.User, error)
+
+func UpdateUser(db *sql.DB, userID int, description, status string, assignedTo int, price float64, isCompleted bool) error
+
+func CreateAccountingRecord(db *sql.DB, userID, taskID int, status string, assignedTo int, price float64, isCompleted bool) (int, error)
