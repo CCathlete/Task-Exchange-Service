@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"time"
 )
 
+// TODO: Add a section for the creation of the database if it doesn't exist.
 func InitDB(config *Config) (*sql.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
@@ -26,11 +28,13 @@ func InitDB(config *Config) (*sql.DB, error) {
 }
 
 // Creating a new task and returning its taskID.
+// TODO: Fix the time to include date only.
 func CreateTask(db *sql.DB, description string, assignedTo int) (int, error) {
 	price := rand.Float64()*20 + 20 // Random price between 20 and 40.
-	query := `INSERT INTO tasks (description, assigned_to, status, price) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO tasks (description, assigned_to, status, price, creation_time, completion_time)` +
+		`VALUES (?, ?, ?, ?, ?, ?)`
 
-	result, err := db.Exec(query, description, assignedTo, "pending", price)
+	result, err := db.Exec(query, description, assignedTo, "pending", price, time.Now().Format("YYYY-MM-DD HH:MM"), "")
 	if err != nil {
 		return 0, err
 	}
@@ -62,3 +66,10 @@ func GetTasks(db *sql.DB, userID int) ([]entities.Task, error) {
 	}
 	return tasks, nil
 }
+
+func CreateUser(db *sql.DB, name, email, role, joinedAt string) (int, error) {
+	var userID int
+	return userID, nil
+}
+
+func GetUser(db *sql.DB, name, email, role string) (entities.User, error)
