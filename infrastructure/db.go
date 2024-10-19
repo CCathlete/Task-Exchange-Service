@@ -4,24 +4,56 @@ import (
 	"aTES/core/entities"
 	"database/sql"
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 // TODO: Add a section for the creation of the database if it doesn't exist.
-func InitDB(config *Config) (*sql.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBName,
+func InitDB(config Config) (*sql.DB, error) {
+	connectStringNoDB := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s sslmode=%s",
+		config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBSSLMode,
 	)
 
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", connectStringNoDB)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error connecting to postgres server: %v", err)
+	}
+	defer db.Close()
+
+	// Checking if our target DB exists. We're extracting a boolean from the query and an error
+	// means there was a problem with the check.
+	var itExists bool
+	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '%s'", config.DBName)
+	err = db.QueryRow(query).Scan(&itExists)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if database exists: %v", err)
+	}
+
+	// We create the DB if it doesn't exist.
+	if !itExists {
+		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", config.DBName))
+		if err != nil {
+			return nil, fmt.Errorf("couldn't create the database: %v", err)
+		}
+		log.Printf("Database %s created.\n", config.DBName)
+	} else {
+		log.Printf("Database %s already exists.\n", config.DBName)
+	}
+
+	// Connecting to the target db. We'll use the string created earlier and att dbname to it.
+	connectStringWithDB := fmt.Sprintf("%s dbname=%s", connectStringNoDB, config.DBName)
+
+	db, err = sql.Open("postgres", connectStringWithDB)
+	if err != nil {
+		return nil, fmt.Errorf("error connecting to target database: %v", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("connection was successful but DB is not responding: %v", err)
 	}
 
 	return db, nil
