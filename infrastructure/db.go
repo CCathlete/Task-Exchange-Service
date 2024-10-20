@@ -11,7 +11,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// TODO: Add a section for the creation of the database if it doesn't exist.
 func InitDB(config Config) (*sql.DB, error) {
 	connectStringNoDB := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s sslmode=%s",
@@ -63,7 +62,7 @@ func InitDB(config Config) (*sql.DB, error) {
 func CreateTask(db *sql.DB, description string, assignedTo int) (int, error) {
 	price := rand.Float64()*20 + 20 // Random price between 20 and 40.
 	query := `INSERT INTO tasks (description, assigned_to, status, price, creation_time, completion_time)` +
-		`VALUES (?, ?, ?, ?, ?, ?)`
+		`VALUES ($1, $2, $3, $4, $5, $6)`
 
 	result, err := db.Exec(query, description, assignedTo, "pending", price, time.Now().Format("YYYY-MM-DD HH:MM"), "")
 	if err != nil {
@@ -78,11 +77,27 @@ func CreateTask(db *sql.DB, description string, assignedTo int) (int, error) {
 	return int(taskID), nil
 }
 
-func UpdateTask(db *sql.DB, description, status string, taskID, assignedTo int, price float64, isCompleted bool) error
+func UpdateTask(db *sql.DB, description, status string, taskID, assignedTo int, price float64, isCompleted bool) error {
+	query := `
+		UPDATE tasks
+		SET description = $1,
+			status = $2,
+			assigned_to = $3,
+			price = $4,
+			is_completed = $5
+		WHERE id = $6
+		`
+	_, err := db.Exec(query, description, status, assignedTo, price, isCompleted, taskID)
+	if err != nil {
+		return fmt.Errorf("failed to update task: %v", err)
+	}
+
+	return nil
+}
 
 // Getting tasks that are assigned to a specific user.
 func GetTasks(db *sql.DB, userID int) ([]entities.Task, error) {
-	query := `SELECT id, description, assigned_to, status, price FROM tasks WHERE assigned_to = ?`
+	query := `SELECT id, description, assigned_to, status, price FROM tasks WHERE assigned_to = $1`
 	rows, err := db.Query(query, userID)
 	if err != nil {
 		return nil, err
@@ -102,6 +117,16 @@ func GetTasks(db *sql.DB, userID int) ([]entities.Task, error) {
 
 func CreateUser(db *sql.DB, name, email, role, joinedAt string) (int, error) {
 	var userID int
+	query := `
+	INSERT INTO users (name, email, role, joined_at)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id
+	`
+	err := db.QueryRow(query, name, email, role, joinedAt).Scan(&userID)
+	if err != nil {
+		return 0, fmt.Errorf("there was an issue with creating the user: %v", err)
+	}
+
 	return userID, nil
 }
 
