@@ -131,7 +131,35 @@ func CreateUser(db *sql.DB, name, email, role, joinedAt string) (int, error) {
 }
 
 // We use ID or cross role, name and email to find the correct user.
-func GetUser(db *sql.DB, userID int, name, email, role string) (entities.User, error)
+func GetUser(db *sql.DB, userIDp *int, name, email, role string) (entities.User, error) {
+	var user entities.User
+	var query string
+	var err error
+
+	if userIDp != nil {
+		query = `
+		SELECT id, name, email, role, joined_at 
+		FROM users 
+		WHERE id = $1
+		`
+		err = db.QueryRow(query, *userIDp).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
+	} else {
+		// If userID is not provided we cross other fields.
+		query = `
+		SELECT id, name, email, role, joined_at 
+		FROM users 
+		WHERE (name = $1 AND email = $2)
+		OR (email = $2 AND role = $3)
+		`
+		err = db.QueryRow(query, name, email, role).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
+	}
+
+	if err != nil {
+		return entities.User{}, fmt.Errorf("issue with getting user info from the DB: %v", err)
+	}
+
+	return user, nil
+}
 
 func UpdateUser(db *sql.DB, userID int, description, status string, assignedTo int, price float64, isCompleted bool) error
 
