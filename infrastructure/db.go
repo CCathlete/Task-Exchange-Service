@@ -219,3 +219,12 @@ func UpdateAccountingRecord(db *gorm.DB, recordID, assignedTo, taskID int, statu
 
 	return nil
 }
+
+func GetAccountingRecord(db *gorm.DB, accountingRecordID int) (entities.AccountingRecord, error) {
+	var record entities.AccountingRecord
+	if err := db.First(&record, accountingRecordID).Error; err != nil {
+		return entities.AccountingRecord{}, fmt.Errorf("failed to retrieve the accounting record: %w", err)
+	}
+
+	return record, nil
+}
