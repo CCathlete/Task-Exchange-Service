@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 /*
@@ -194,4 +195,27 @@ func CreateAccountingRecord(db *sql.DB, userID, taskID int, status string, assig
 	}
 
 	return recordID, nil
+}
+
+// Updating an existing accounting record to the new values sent to the function.
+func UpdateAccountingRecord(db *gorm.DB, recordID, assignedTo, taskID int, status string, amount float64) error {
+	var record entities.AccountingRecord
+
+	if err := db.First(&record, recordID).Error; err != nil {
+		return fmt.Errorf("record not found: %w", err)
+	}
+
+	// In case the record does exist, we update it.
+	record.Status = status
+	record.UserID = assignedTo
+	record.TaskID = taskID
+	record.Amount = amount
+	record.LastUpdated = time.Now().Format("YYYY-MM-DD HH:MM")
+
+	// Saving the updated record to the db instead of the old one.
+	if err := db.Save(&record).Error; err != nil {
+		return fmt.Errorf("couldn't save the updated accounting record: %w", err)
+	}
+
+	return nil
 }
