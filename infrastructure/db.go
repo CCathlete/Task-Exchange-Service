@@ -112,7 +112,7 @@ func GetTasks(db *sql.DB, userID int) ([]entities.Task, error) {
 	var tasks []entities.Task
 	for rows.Next() {
 		var task entities.Task
-		if err := rows.Scan(&task.ID, &task.Description, &task.AssignedTo, &task.Status, &task.Price); err != nil {
+		if err := rows.Scan(&task.TaskID, &task.Description, &task.AssignedTo, &task.Status, &task.Price); err != nil {
 			return nil, err
 		}
 		tasks = append(tasks, task)
@@ -147,7 +147,7 @@ func GetUser(db *sql.DB, userIDp *int, name, email, role string) (entities.User,
 		FROM users 
 		WHERE id = $1
 		`
-		err = db.QueryRow(query, *userIDp).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
+		err = db.QueryRow(query, *userIDp).Scan(&user.UserID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
 	} else {
 		// If userID is not provided we cross other fields.
 		query = `
@@ -156,7 +156,7 @@ func GetUser(db *sql.DB, userIDp *int, name, email, role string) (entities.User,
 		WHERE (name = $1 AND email = $2)
 		OR (email = $2 AND role = $3)
 		`
-		err = db.QueryRow(query, name, email, role).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
+		err = db.QueryRow(query, name, email, role).Scan(&user.UserID, &user.Name, &user.Email, &user.Role, &user.JoinedAt)
 	}
 
 	if err != nil {
