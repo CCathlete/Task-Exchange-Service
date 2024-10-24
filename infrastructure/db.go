@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -16,51 +17,64 @@ import (
 TODO: Make sure that the task table has task_id for each row and not just id.
 Same with users table - user_id and accounting_records tables - record_id.
 */
-func InitDB(config Config) (*sql.DB, error) {
+func InitDB(config Config) (*sql.DB, *gorm.DB, error) {
 	connectStringNoDB := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s sslmode=%s",
 		config.DBHost, config.DBPort, config.DBUser, config.DBPass, config.DBSSLMode,
 	)
 
-	db, err := sql.Open("postgres", connectStringNoDB)
+	sqlDB, err := sql.Open("postgres", connectStringNoDB)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to postgres server: %w", err)
+		return nil, nil, fmt.Errorf("error connecting to postgres server: %w", err)
 	}
-	defer db.Close()
 
 	// Checking if our target DB exists. We're extracting a boolean from the query and an error
 	// means there was a problem with the check.
 	var itExists bool
 	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = '%s'", config.DBName)
-	err = db.QueryRow(query).Scan(&itExists)
+	err = sqlDB.QueryRow(query).Scan(&itExists)
 	if err != nil {
-		return nil, fmt.Errorf("error checking if database exists: %w", err)
+		return nil, nil, fmt.Errorf("error checking if database exists: %w", err)
 	}
 
 	// We create the DB if it doesn't exist.
 	if !itExists {
-		_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", config.DBName))
+		_, err = sqlDB.Exec(fmt.Sprintf("CREATE DATABASE %s", config.DBName))
 		if err != nil {
-			return nil, fmt.Errorf("couldn't create the database: %w", err)
+			return nil, nil, fmt.Errorf("couldn't create the database: %w", err)
 		}
 		log.Printf("Database %s created.\n", config.DBName)
 	} else {
 		log.Printf("Database %s already exists.\n", config.DBName)
 	}
+	sqlDB.Close() // Closing the initial connection we made to the server since it's not needed anymore.
 
 	// Connecting to the target db. We'll use the string created earlier and att dbname to it.
 	connectStringWithDB := fmt.Sprintf("%s dbname=%s", connectStringNoDB, config.DBName)
 
-	db, err = sql.Open("postgres", connectStringWithDB)
+	sqlDB, err = sql.Open("postgres", connectStringWithDB)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting to target database: %w", err)
+		return nil, nil, fmt.Errorf("error connecting to target database: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("connection was successful but DB is not responding: %w", err)
+	if err := sqlDB.Ping(); err != nil {
+		return nil, nil, fmt.Errorf("connection was successful but DB is not responding: %w", err)
 	}
 
-	return db, nil
+	// Wrapping the sql.DB we've opened with an gorm.DB object.
+	gormDB, err := gorm.Open(postgres.New(postgres.Config{Conn: sqlDB}), &gorm.Config{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to initialise GORM with an existing sql.DB: %w", err)
+	}
+
+	// Creating tables from our entitites structs and autimigration.
+	err = gormDB.AutoMigrate(&entities.User{}, &entities.Task{}, &entities.AccountingRecord{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to migrate the DB: %w", err)
+	}
+
+	log.Println("DB connected and migrated successfully.")
+	return sqlDB, gormDB, nil
 }
 
 // Creating a new task and returning its taskID.

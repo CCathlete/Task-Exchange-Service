@@ -15,14 +15,14 @@ func main() {
 	}
 
 	// Connecting to the database.
-	db, err := infrastructure.InitDB(config)
+	sqlDB, _, err := infrastructure.InitDB(config)
 	if err != nil {
 		log.Fatalf("Error inititalising the database: %v", err)
 	}
-	defer db.Close()
+	defer sqlDB.Close()
 
 	// Initialising HTTP handlers.
-	httpHandlers := infrastructure.NewHandlersGroup(db)
+	httpHandlers := infrastructure.NewHandlersGroup(sqlDB)
 
 	// Setting up routs.
 	http.HandleFunc("/tasks", httpHandlers.TaskHandler)

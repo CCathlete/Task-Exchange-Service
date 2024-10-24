@@ -12,15 +12,15 @@ type Task struct {
 	LastUpdated    string  `gorm:"type:timestamp"`           // Timestamp of last update time.
 }
 
-type User struct {
-	UserID      int     `gorm:"primaryKey;autoIncrement"`
-	Name        string  `gorm:"type:varchar(100)"`
-	Email       string  `gorm:"type:varchar(100);uniqueIndex"`
-	Role        string  `gorm:"type:varchar(50)"`
-	Balance     float64 `gorm:"type:decimal(10, 2)"`
-	JoinedAt    string  `gorm:"type:date"`      // Date of joining the company.
-	LeftAt      string  `gorm:"type:date"`      // Date of departure, empty list if currently employed.
-	LastUpdated string  `gorm:"type:timestamp"` // Timestamp of last update time.
+type User struct { // We send this in http requests for the authorisation system to store.
+	UserID      int     `json:"user_id"`
+	Name        string  `json:"name"`
+	Email       string  `json:"email"`
+	Role        string  `json:"role"`
+	Balance     float64 `json:"balance"`
+	JoinedAt    string  `json:"joined_at"`    // Date of joining the company.
+	LeftAt      string  `json:"left_at"`      // Date of departure, empty list if currently employed.
+	LastUpdated string  `json:"last_updated"` // Timestamp of last update time.
 }
 
 type AccountingRecord struct {
