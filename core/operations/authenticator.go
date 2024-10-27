@@ -84,7 +84,42 @@ func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
 	return user, nil
 }
 
-func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt string) error
+// Updates an existing user.
+// Note:
+func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
+	// Validating that the user exists.
+	user, exists := a.users[userID]
+	if !exists {
+		return fmt.Errorf("User does not exist.")
+	}
+
+	// Updating the fields of the user.
+	user.Name = name
+	user.Email = email
+	user.Role = role
+	user.LeftAt = leftAt
+	user.LastUpdated = time.Now().Format("YYYY-MM-DD HH:MM")
+	a.users[userID] = user
+
+	userJSON, err := json.Marshal(user)
+	if err != nil {
+		return fmt.Errorf("Couldnt marshal user data into a JSON: %w", err)
+	}
+
+	// Create a request body and send it via an http client.
+	request, err := http.NewRequest(http.MethodPut, "http://localhost/update:8181", bytes.NewBuffer(userJSON))
+	if err != nil {
+		return fmt.Errorf("Error when creating a new http put request from the user's JSON: %w", err)
+	}
+
+	client := http.Client{}
+	_, err = client.Do(request)
+	if err != nil {
+		return fmt.Errorf("Error when sending an http put request to the user mgmt server: %w", err)
+	}
+
+	return nil
+}
 
 func (a *mockAuthenticator) DeleteUser(userID int) error
 
