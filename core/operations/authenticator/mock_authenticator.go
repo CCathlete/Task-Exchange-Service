@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func NewMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
+func newMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
 	tokens, err := loadTokensFromYaml(tokenYamlPath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load tokens from yaml: %w", err)
@@ -22,9 +22,13 @@ func NewMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
 	}, nil
 }
 
-func (a *Authenticator) CreateUser(name, role, email, joinedAt string) (int, error) {
+// Creating a new user using the mock authenticator.
+func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	newUser := entities.User{
-		UserID:      len(a.users),
+		UserID:      len(a.users) + 1,
 		Name:        name,
 		Email:       email,
 		Role:        role,
@@ -33,22 +37,18 @@ func (a *Authenticator) CreateUser(name, role, email, joinedAt string) (int, err
 		LeftAt:      "",
 		LastUpdated: time.Now().Format("YYYY-MM-DD HH:MM"),
 	}
-	a.users[len(a.users)] = newUser
-	userJSON, err := json.Marshal(newUser)
-	if err != nil {
-		return newUser.UserID, fmt.Errorf("couldn't marshal the new user info: %w", err)
-	}
+	a.users[len(a.users)+1] = newUser
 
-	// TODO: edit url.
-	_, err = http.Post("http://localhost/create-user:8181", "application/json", bytes.NewBuffer(userJSON))
+	// Generating and storing a new token for the user.
+	_, err := a.newToken(newUser.UserID)
 	if err != nil {
-		return newUser.UserID, fmt.Errorf("couldn't post the new user information to the management server: %w", err)
+		return newUser.UserID, fmt.Errorf("Failed to create a token for user %s, %s: %w", name, role, err)
 	}
 
 	return newUser.UserID, nil
 }
 
-func (a *Authenticator) GetUser(userID int) (entities.User, error) {
+func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
 	user, exists := a.users[userID]
 	if !exists {
 		return entities.User{}, fmt.Errorf("the user doesn't exist")
@@ -76,7 +76,7 @@ func (a *Authenticator) GetUser(userID int) (entities.User, error) {
 }
 
 // Updates an existing user.
-func (a *Authenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
+func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
 	// Validating that the user exists.
 	user, exists := a.users[userID]
 	if !exists {
@@ -112,8 +112,19 @@ func (a *Authenticator) UpdateUser(userID int, name, email, role, leftAt string)
 }
 
 // Sends a delete request to remove data of a user.
-func (a *Authenticator) DeleteUser(userID int) error {
-	//
-}
+func (a *mockAuthenticator) deleteUser(userID int) error
 
-func (a *Authenticator) ValidateToken(userID int, token string) bool
+func (a *mockAuthenticator) validateToken(userID int, token string) bool
+
+// Creates a new token and writes it to the token repo.
+// Wrapper for tokenYaml.generateToken
+func (a *mockAuthenticator) newToken(userID int) (string, error) {
+	// TODO: add type check to check if tokenRepo is of type tokenYaml.
+
+	err := a.tokens.generateToken(userID)
+	if err != nil {
+		return "", fmt.Errorf("Failed to generate and store a new token: %w", err)
+	}
+
+	return a.tokens.tokensMap[userID], nil
+}
