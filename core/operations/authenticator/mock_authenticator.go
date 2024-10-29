@@ -48,6 +48,11 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	return newUser.UserID, nil
 }
 
+func (a *mockAuthenticator) startServer(host string, port int) error {
+	http.HandleFunc("/create_user", a.createUserHandler)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
+}
+
 func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
 	user, exists := a.users[userID]
 	if !exists {
