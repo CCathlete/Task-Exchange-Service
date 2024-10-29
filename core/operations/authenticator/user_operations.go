@@ -1,4 +1,4 @@
-package operations
+package Authenticator
 
 import (
 	"aTES/core/entities"
@@ -10,28 +10,7 @@ import (
 	"time"
 )
 
-// This defines the service handling user related operations.
-type Authenticator interface {
-	CreateUser(name, role, email, joinedAt string) (int, error) // Also generates a token and stores it in the dedicated token repo.
-	GetUser(userID int) (entities.User, error)
-	UpdateUser(userID int, name, email, role, leftAt string) error
-	DeleteUser(userID int) error
-	ValidateToken(userID int, token string) bool
-}
-
-type mockAuthenticator struct {
-	tokenFile string // Path to token repo yaml
-	users     map[int]entities.User
-}
-
-func NewMockAuthenticator(tokenFile string) Authenticator {
-	return &mockAuthenticator{
-		tokenFile: tokenFile,
-		users:     make(map[int]entities.User),
-	}
-}
-
-func (a *mockAuthenticator) CreateUser(name, role, email, joinedAt string) (int, error) {
+func (a *Authenticator) CreateUser(name, role, email, joinedAt string) (int, error) {
 	newUser := entities.User{
 		UserID:      len(a.users),
 		Name:        name,
@@ -57,7 +36,7 @@ func (a *mockAuthenticator) CreateUser(name, role, email, joinedAt string) (int,
 	return newUser.UserID, nil
 }
 
-func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
+func (a *Authenticator) GetUser(userID int) (entities.User, error) {
 	user, exists := a.users[userID]
 	if !exists {
 		return entities.User{}, fmt.Errorf("the user doesn't exist")
@@ -85,8 +64,7 @@ func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
 }
 
 // Updates an existing user.
-// Note:
-func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
+func (a *Authenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
 	// Validating that the user exists.
 	user, exists := a.users[userID]
 	if !exists {
@@ -121,6 +99,9 @@ func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt str
 	return nil
 }
 
-func (a *mockAuthenticator) DeleteUser(userID int) error
+// Sends a delete request to remove data of a user.
+func (a *Authenticator) DeleteUser(userID int) error {
+	//
+}
 
-func (a *mockAuthenticator) ValidateToken(userID int, token string) bool
+func (a *Authenticator) ValidateToken(userID int, token string) bool
