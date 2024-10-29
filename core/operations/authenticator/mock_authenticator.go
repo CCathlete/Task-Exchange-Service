@@ -10,6 +10,18 @@ import (
 	"time"
 )
 
+func NewMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
+	tokens, err := loadTokensFromYaml(tokenYamlPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load tokens from yaml: %w", err)
+	}
+
+	return &mockAuthenticator{
+		users:  make(map[int]entities.User),
+		tokens: tokens,
+	}, nil
+}
+
 func (a *Authenticator) CreateUser(name, role, email, joinedAt string) (int, error) {
 	newUser := entities.User{
 		UserID:      len(a.users),
