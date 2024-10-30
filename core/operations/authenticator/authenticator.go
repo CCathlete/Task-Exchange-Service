@@ -44,7 +44,6 @@ func (tokens tokenYaml) saveTokensToYaml() error {
 	return nil
 }
 
-// TODO: Implement the GenerateToken method.
 // Creates a token, refreshes the local storage of it and writes it to the token yaml file.
 func (ty tokenYaml) generateToken(userID int) error {
 

@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-// TODO: add handler functions for createUser, updateUser, deleteUser, getUser and an init funtion that will invoke the constructor.
-
 func (a *mockAuthenticator) createUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Making sure that we get a post request.
 	if r.Method != http.MethodPost {
