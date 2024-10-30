@@ -105,7 +105,7 @@ func (a *mockAuthenticator) deleteUser(userID int) error {
 
 	// Removing the token and updating the token repo.
 	delete(a.tokens.tokensMap, userID)
-	if err := saveTokensToYaml(a.tokens); err != nil {
+	if err := a.tokens.saveTokensToYaml(); err != nil {
 		return fmt.Errorf("Error updating the token repo: %w", err)
 	}
 

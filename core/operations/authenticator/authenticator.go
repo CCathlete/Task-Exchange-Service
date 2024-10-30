@@ -2,6 +2,8 @@ package Authenticator
 
 import (
 	"aTES/core/entities"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -27,7 +29,7 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 	return tokens, nil
 }
 
-func saveTokensToYaml(tokens tokenYaml) error {
+func (tokens tokenYaml) saveTokensToYaml() error {
 	file, err := os.Create(tokens.location)
 	if err != nil {
 		return fmt.Errorf("Error recreating the file %s: %w", tokens.location, err)
@@ -44,7 +46,26 @@ func saveTokensToYaml(tokens tokenYaml) error {
 
 // TODO: Implement the GenerateToken method.
 // Creates a token, refreshes the local storage of it and writes it to the token yaml file.
-func (ty tokenYaml) generateToken(userID int) error
+func (ty tokenYaml) generateToken(userID int) error {
+
+	// Generating a unique token.
+	tokenBytes := make([]byte, 16) // 128 bit long token.
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return fmt.Errorf("Error generating bytes for a new token: %w", err)
+	}
+	newToken := hex.EncodeToString(tokenBytes) // Converting from binary to hexadecimal and turns into a string.
+
+	// Storing the new tiken in the token map fur the given userID.
+	ty.tokensMap[userID] = newToken
+
+	// Updating the token repo (yaml).
+
+	if err := ty.saveTokensToYaml(); err != nil {
+		return fmt.Errorf("Error while undating token repo with the new token: %w", err)
+	}
+
+	return nil
+}
 
 // Creates a mock authenticator from a pre declared instance and starts the server.
 func InitAuthServer(host, tokenYamlPath string, port int) error {
