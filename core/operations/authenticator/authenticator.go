@@ -27,6 +27,21 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 	return tokens, nil
 }
 
+func saveTokensToYaml(tokens tokenYaml) error {
+	file, err := os.Create(tokens.location)
+	if err != nil {
+		return fmt.Errorf("Error recreating the file %s: %w", tokens.location, err)
+	}
+	defer file.Close()
+
+	encoder := yaml.NewEncoder(file)
+	if err := encoder.Encode(tokens.tokensMap); err != nil {
+		return fmt.Errorf("Error writing data to fole %s: %w", tokens.location, err)
+	}
+
+	return nil
+}
+
 // TODO: Implement the GenerateToken method.
 // Creates a token, refreshes the local storage of it and writes it to the token yaml file.
 func (ty tokenYaml) generateToken(userID int) error

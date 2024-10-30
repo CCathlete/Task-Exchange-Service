@@ -90,7 +90,27 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 }
 
 // Sends a delete request to remove data of a user.
-func (a *mockAuthenticator) deleteUser(userID int) error
+func (a *mockAuthenticator) deleteUser(userID int) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Validating that the user exists.
+	_, exists := a.users[userID]
+	if !exists {
+		return fmt.Errorf("User does not exist.")
+	}
+
+	// Deteling the user.
+	delete(a.users, userID)
+
+	// Removing the token and updating the token repo.
+	delete(a.tokens.tokensMap, userID)
+	if err := saveTokensToYaml(a.tokens); err != nil {
+		return fmt.Errorf("Error updating the token repo: %w", err)
+	}
+
+	return nil
+}
 
 func (a *mockAuthenticator) validateToken(userID int, token string) bool {
 	expectedToken, exists := a.tokens.tokensMap[userID]
