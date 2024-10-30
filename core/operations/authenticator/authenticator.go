@@ -32,22 +32,22 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 func (ty tokenYaml) generateToken(userID int) error
 
 // Creates a mock authenticator from a pre declared instance and starts the server.
-func InitAuthServer(host, tokenYamlPath string, port int) (*mockAuthenticator, error) {
+func InitAuthServer(host, tokenYamlPath string, port int) error {
 
 	// Invoking the constructor and starting the server.
 	var maP *mockAuthenticator
 	maP, err := newMockAuthenticator(tokenYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("Error starting the authenticator using yaml file at %s: %w",
+		return fmt.Errorf("Error starting the authenticator using yaml file at %s: %w",
 			tokenYamlPath, err)
 	}
 
 	err = maP.startServer(host, port)
 	if err != nil {
-		return nil, fmt.Errorf("Error starting the authentication server: %w", err)
+		return fmt.Errorf("Error starting the authentication server: %w", err)
 	}
 
-	return maP, nil
+	return nil
 }
 
 // General interface functions.
