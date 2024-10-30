@@ -9,7 +9,7 @@ import (
 // TODO: add handler functions for createUser, updateUser, deleteUser, getUser and an init funtion that will invoke the constructor.
 
 func (a *mockAuthenticator) createUserHandler(w http.ResponseWriter, r *http.Request) {
-	// Making sure that we send a post request.
+	// Making sure that we get a post request.
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 	}
@@ -37,4 +37,24 @@ func (a *mockAuthenticator) createUserHandler(w http.ResponseWriter, r *http.Req
 	response := map[string]int{"user_id": userID}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Making sure that we got a get request.
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+
+	// Creating a temporary structure for decoding the request body's json.
+	var reqBody struct {
+		UserID int    `json:"user_id"`
+		Token  string `json:"token"`
+	}
+
+	// Decoding the request's body to get userID and token.
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
+		return
+	}
+
 }

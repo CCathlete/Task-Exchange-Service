@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -53,28 +52,14 @@ func (a *mockAuthenticator) startServer(host string, port int) error {
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 
+// Returns the entities.User struct for an EXISTING user.
 func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	user, exists := a.users[userID]
 	if !exists {
 		return entities.User{}, fmt.Errorf("the user doesn't exist")
-	}
-	// If we reach this line it means user isn't stored locally or doesn't exist yet.
-
-	// TODO: edit url for get request.
-	response, err := http.Get("http://localhost/get:8181")
-	if err != nil {
-		return entities.User{}, fmt.Errorf("couldn't get user via http: %w", err)
-	}
-	defer response.Body.Close()
-
-	resBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return entities.User{}, fmt.Errorf("error while reading the response's body: %w", err)
-	}
-
-	err = json.Unmarshal(resBody, &user)
-	if err != nil {
-		return entities.User{}, fmt.Errorf("error while unmarshaling the response body's json: %w", err)
 	}
 
 	return user, nil
