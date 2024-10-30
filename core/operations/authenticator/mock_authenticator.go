@@ -104,7 +104,14 @@ func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt str
 // Sends a delete request to remove data of a user.
 func (a *mockAuthenticator) deleteUser(userID int) error
 
-func (a *mockAuthenticator) validateToken(userID int, token string) bool
+func (a *mockAuthenticator) validateToken(userID int, token string) bool {
+	expectedToken, exists := a.tokens.tokensMap[userID]
+	if !exists || expectedToken != token {
+		return false
+	}
+
+	return true
+}
 
 // Creates a new token and writes it to the token repo.
 // Wrapper for tokenYaml.generateToken
