@@ -49,11 +49,12 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 
 func (a *mockAuthenticator) startServer(host string, port int) error {
 	http.HandleFunc("/create_user", a.createUserHandler)
+	http.HandleFunc("/get_user", a.getUserHandler)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 
 // Returns the entities.User struct for an EXISTING user.
-func (a *mockAuthenticator) GetUser(userID int) (entities.User, error) {
+func (a *mockAuthenticator) getUser(userID int) (entities.User, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 

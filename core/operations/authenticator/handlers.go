@@ -57,4 +57,24 @@ func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Validating the token.
+	tokenIsValid := a.validateToken(reqBody.UserID, reqBody.Token)
+	if !tokenIsValid {
+		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
+		return
+	}
+
+	// Getting the user's information.
+	user, err := a.getUser(reqBody.UserID)
+	if err != nil {
+		http.Error(w, "Error retrieving user's information.", http.StatusNotFound)
+		return
+	}
+
+	// Sending user's data as json.
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Error encoding user's data", http.StatusInternalServerError)
+		return
+	}
 }
