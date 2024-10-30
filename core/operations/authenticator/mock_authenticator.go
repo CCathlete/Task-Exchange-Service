@@ -2,8 +2,6 @@ package Authenticator
 
 import (
 	"aTES/core/entities"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -50,6 +48,7 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 func (a *mockAuthenticator) startServer(host string, port int) error {
 	http.HandleFunc("/create_user", a.createUserHandler)
 	http.HandleFunc("/get_user", a.getUserHandler)
+	http.HandleFunc("/update_user", a.updateUserHandler)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 
@@ -67,37 +66,25 @@ func (a *mockAuthenticator) getUser(userID int) (entities.User, error) {
 }
 
 // Updates an existing user.
-func (a *mockAuthenticator) UpdateUser(userID int, name, email, role, leftAt string) error {
+func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
 	// Validating that the user exists.
-	user, exists := a.users[userID]
+	user, exists := a.users[updatedUser.UserID]
 	if !exists {
 		return fmt.Errorf("User does not exist.")
 	}
 
 	// Updating the fields of the user.
-	user.Name = name
-	user.Email = email
-	user.Role = role
-	user.LeftAt = leftAt
+	user.Name = updatedUser.Name
+	user.Email = updatedUser.Email
+	user.Role = updatedUser.Role
+	user.LeftAt = updatedUser.LeftAt
 	user.LastUpdated = time.Now().Format("YYYY-MM-DD HH:MM")
-	a.users[userID] = user
 
-	userJSON, err := json.Marshal(user)
-	if err != nil {
-		return fmt.Errorf("Couldnt marshal user data into a JSON: %w", err)
-	}
-
-	// Create a request body and send it via an http client.
-	request, err := http.NewRequest(http.MethodPut, "http://localhost/update:8181", bytes.NewBuffer(userJSON))
-	if err != nil {
-		return fmt.Errorf("Error when creating a new http put request from the user's JSON: %w", err)
-	}
-
-	client := http.Client{}
-	_, err = client.Do(request)
-	if err != nil {
-		return fmt.Errorf("Error when sending an http put request to the user mgmt server: %w", err)
-	}
+	// Saving the changes.
+	a.users[updatedUser.UserID] = user
 
 	return nil
 }

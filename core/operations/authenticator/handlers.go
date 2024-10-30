@@ -1,6 +1,7 @@
 package Authenticator
 
 import (
+	"aTES/core/entities"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -77,4 +78,39 @@ func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Error encoding user's data", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (a *mockAuthenticator) updateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Making sure that we got a get request.
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+	}
+
+	// Creating a temporary structure for decoding the request body's json.
+	var reqBody struct {
+		Token string        `json:"name"`
+		User  entities.User `json:"user"` // User has json tags of its own.
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
+		return
+	}
+
+	// Validating the token.
+	tokenIsValid := a.validateToken(reqBody.User.UserID, reqBody.Token)
+	if !tokenIsValid {
+		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
+		return
+	}
+
+	// Updating the user.
+	err := a.updateUser(reqBody.User)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error updating user: %v", err), http.StatusNotFound)
+		return
+	}
+
+	// Sending a response with the new user's ID.
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User successfully updated"))
 }
