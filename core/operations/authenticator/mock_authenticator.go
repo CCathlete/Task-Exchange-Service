@@ -10,16 +10,16 @@ import (
 func newMockAuthenticator(tokenYamlPath, usersYamlPath string) (*mockAuthenticator, error) {
 	tokens, err := loadTokensFromYaml(tokenYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load tokens from yaml: %w", err)
+		return nil, fmt.Errorf("failed to load tokens from yaml: %w", err)
 	}
 	users, err := loadUsersFromYaml(usersYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to load users from yaml: %w", err)
+		return nil, fmt.Errorf("failed to load users from yaml: %w", err)
 	}
 
 	return &mockAuthenticator{
-		users:  &users,
-		tokens: &tokens,
+		users:  users,
+		tokens: tokens,
 	}, nil
 }
 
@@ -43,7 +43,7 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	// Generating and storing a new token for the user.
 	_, err := a.newToken(newUser.UserID)
 	if err != nil {
-		return newUser.UserID, fmt.Errorf("Failed to create a token for user %s, %s: %w", name, role, err)
+		return newUser.UserID, fmt.Errorf("failed to create a token for user %s, %s: %w", name, role, err)
 	}
 
 	return newUser.UserID, nil
@@ -53,6 +53,7 @@ func (a *mockAuthenticator) startServer(host string, port int) error {
 	http.HandleFunc("/create_user", a.createUserHandler)
 	http.HandleFunc("/get_user", a.getUserHandler)
 	http.HandleFunc("/update_user", a.updateUserHandler)
+	http.HandleFunc("/delete_user", a.deleteUserHandler)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 }
 
@@ -77,7 +78,7 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 	// Validating that the user exists.
 	user, exists := a.users.usersMap[updatedUser.UserID]
 	if !exists {
-		return fmt.Errorf("User does not exist.")
+		return fmt.Errorf("user does not exist")
 	}
 
 	// Updating the fields of the user.
@@ -101,16 +102,19 @@ func (a *mockAuthenticator) deleteUser(userID int) error {
 	// Validating that the user exists.
 	_, exists := a.users.usersMap[userID]
 	if !exists {
-		return fmt.Errorf("User does not exist.")
+		return fmt.Errorf("user does not exist")
 	}
 
-	// Deteling the user.
+	// Deleting the user and updating the user's repo.
 	delete(a.users.usersMap, userID)
+	if err := a.users.saveUsersToYaml(); err != nil {
+		return fmt.Errorf("error updating the users repo: %w", err)
+	}
 
 	// Removing the token and updating the token repo.
 	delete(a.tokens.tokensMap, userID)
 	if err := a.tokens.saveTokensToYaml(); err != nil {
-		return fmt.Errorf("Error updating the token repo: %w", err)
+		return fmt.Errorf("error updating the token repo: %w", err)
 	}
 
 	return nil
@@ -131,7 +135,7 @@ func (a *mockAuthenticator) newToken(userID int) (string, error) {
 
 	err := a.tokens.generateTokenForYaml(userID)
 	if err != nil {
-		return "", fmt.Errorf("Failed to generate and store a new token: %w", err)
+		return "", fmt.Errorf("failed to generate and store a new token: %w", err)
 	}
 
 	return a.tokens.tokensMap[userID], nil

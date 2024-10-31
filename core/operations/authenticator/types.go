@@ -30,6 +30,6 @@ type mockAuthenticator struct {
 	mu     sync.Mutex
 }
 
-type tokenRepo interface {
-	generateToken(userID int) error // Creates a token and pushes it to the repo.
-}
+// type tokenRepo interface {
+// 	generateToken(userID int) error // Creates a token and pushes it to the repo.
+// }
