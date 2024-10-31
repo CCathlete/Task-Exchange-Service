@@ -46,19 +46,19 @@ func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Reques
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		UserID int    `json:"user_id"`
-		Token  string `json:"token"`
+		UserID   int    `json:"user_id"`
+		Password string `json:"password"`
 	}
 
-	// Decoding the request's body to get userID and token.
+	// Decoding the request's body to get userID and password.
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
 		return
 	}
 
-	// Validating the token.
-	tokenIsValid := a.validateToken(reqBody.UserID, reqBody.Token)
-	if !tokenIsValid {
+	// Validating the password.
+	passwordIsValid := a.validatePassword(reqBody.UserID, reqBody.Password)
+	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}
@@ -86,17 +86,17 @@ func (a *mockAuthenticator) updateUserHandler(w http.ResponseWriter, r *http.Req
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		Token string        `json:"name"`
-		User  entities.User `json:"user"` // User has json tags of its own.
+		Password string        `json:"name"`
+		User     entities.User `json:"user"` // User has json tags of its own.
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
 		return
 	}
 
-	// Validating the token.
-	tokenIsValid := a.validateToken(reqBody.User.UserID, reqBody.Token)
-	if !tokenIsValid {
+	// Validating the password.
+	passwordIsValid := a.validatePassword(reqBody.User.UserID, reqBody.Password)
+	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}
@@ -121,17 +121,17 @@ func (a *mockAuthenticator) deleteUserHandler(w http.ResponseWriter, r *http.Req
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		Token  string `json:"name"`
-		UserID int    `json:"user_id"`
+		Password string `json:"name"`
+		UserID   int    `json:"user_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
 		return
 	}
 
-	// Validating the token.
-	tokenIsValid := a.validateToken(reqBody.UserID, reqBody.Token)
-	if !tokenIsValid {
+	// Validating the password.
+	passwordIsValid := a.validatePassword(reqBody.UserID, reqBody.Password)
+	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}

@@ -10,35 +10,35 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func loadTokensFromYaml(tokenYamlPath string) (*tokenYaml, error) {
-	var tokens tokenYaml
-	tokens.location = tokenYamlPath
+func loadPasswordsFromYaml(passwordYamlPath string) (*passwordYaml, error) {
+	var passwords passwordYaml
+	passwords.location = passwordYamlPath
 
-	data, err := os.ReadFile(tokenYamlPath)
+	data, err := os.ReadFile(passwordYamlPath)
 	if err != nil {
-		return &tokenYaml{tokensMap: make(map[int]string)},
+		return &passwordYaml{passwordsMap: make(map[int]string)},
 			fmt.Errorf("error while rading yaml: %w", err)
 	}
 
-	err = yaml.Unmarshal(data, &tokens.tokensMap)
+	err = yaml.Unmarshal(data, &passwords.passwordsMap)
 	if err != nil {
-		return &tokenYaml{tokensMap: make(map[int]string)},
-			fmt.Errorf("error while loading tokens from yaml: %w", err)
+		return &passwordYaml{passwordsMap: make(map[int]string)},
+			fmt.Errorf("error while loading passwords from yaml: %w", err)
 	}
 
-	return &tokens, nil
+	return &passwords, nil
 }
 
-func (tokens *tokenYaml) saveTokensToYaml() error {
-	file, err := os.Create(tokens.location)
+func (passwords *passwordYaml) savePasswordsToYaml() error {
+	file, err := os.Create(passwords.location)
 	if err != nil {
-		return fmt.Errorf("error recreating the file %s: %w", tokens.location, err)
+		return fmt.Errorf("error recreating the file %s: %w", passwords.location, err)
 	}
 	defer file.Close()
 
 	encoder := yaml.NewEncoder(file)
-	if err := encoder.Encode(tokens.tokensMap); err != nil {
-		return fmt.Errorf("error writing data to fole %s: %w", tokens.location, err)
+	if err := encoder.Encode(passwords.passwordsMap); err != nil {
+		return fmt.Errorf("error writing data to fole %s: %w", passwords.location, err)
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func loadUsersFromYaml(usersYamlPath string) (*usersYaml, error) {
 	err = yaml.Unmarshal(data, &users.usersMap)
 	if err != nil {
 		return &usersYaml{usersMap: make(map[int]entities.User)},
-			fmt.Errorf("error while loading tokens from yaml: %w", err)
+			fmt.Errorf("error while loading passwords from yaml: %w", err)
 	}
 
 	return &users, nil
@@ -78,37 +78,37 @@ func (users *usersYaml) saveUsersToYaml() error {
 	return nil
 }
 
-// Creates a token, refreshes the local storage of it and writes it to the token yaml file.
-func (ty *tokenYaml) generateTokenForYaml(userID int) error {
+// Creates a password, refreshes the local storage of it and writes it to the password yaml file.
+func (ty *passwordYaml) generatePasswordForYaml(userID int) error {
 
-	// Generating a unique token.
-	tokenBytes := make([]byte, 16) // 128 bit long token.
-	if _, err := rand.Read(tokenBytes); err != nil {
-		return fmt.Errorf("error generating bytes for a new token: %w", err)
+	// Generating a unique password.
+	passwordBytes := make([]byte, 16) // 128 bit long password.
+	if _, err := rand.Read(passwordBytes); err != nil {
+		return fmt.Errorf("error generating bytes for a new password: %w", err)
 	}
-	newToken := hex.EncodeToString(tokenBytes) // Converting from binary to hexadecimal and turns into a string.
+	newpassword := hex.EncodeToString(passwordBytes) // Converting from binary to hexadecimal and turns into a string.
 
-	// Storing the new tiken in the token map fur the given userID.
-	ty.tokensMap[userID] = newToken
+	// Storing the new password in the password map fur the given userID.
+	ty.passwordsMap[userID] = newpassword
 
-	// Updating the token repo (yaml).
+	// Updating the password repo (yaml).
 
-	if err := ty.saveTokensToYaml(); err != nil {
-		return fmt.Errorf("error while undating token repo with the new token: %w", err)
+	if err := ty.savePasswordsToYaml(); err != nil {
+		return fmt.Errorf("error while undating password repo with the new password: %w", err)
 	}
 
 	return nil
 }
 
 // Creates a mock authenticator from a pre declared instance and starts the server.
-func InitAuthServer(host, tokenYamlPath, usersYamlPath string, port int) error {
+func InitAuthServer(host, passwordYamlPath, usersYamlPath string, port int) error {
 
 	// Invoking the constructor and starting the server.
 	var maP *mockAuthenticator
-	maP, err := newMockAuthenticator(tokenYamlPath, usersYamlPath)
+	maP, err := newMockAuthenticator(passwordYamlPath, usersYamlPath)
 	if err != nil {
 		return fmt.Errorf("error starting the authenticator using yaml file at %s: %w",
-			tokenYamlPath, err)
+			passwordYamlPath, err)
 	}
 
 	err = maP.startServer(host, port)
@@ -124,4 +124,4 @@ func InitAuthServer(host, tokenYamlPath, usersYamlPath string, port int) error {
 // func GetUser(au Authenticator, userID int) (entities.User, error)
 // func UpdateUser(au Authenticator, userID int, name, email, role, leftAt string) error
 // func DeleteUser(au Authenticator, userID int) error
-// func ValidateToken(au Authenticator, userID int, token string) bool
+// func Validatepassword(au Authenticator, userID int, password string) bool

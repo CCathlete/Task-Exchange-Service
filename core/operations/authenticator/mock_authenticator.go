@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-func newMockAuthenticator(tokenYamlPath, usersYamlPath string) (*mockAuthenticator, error) {
-	tokens, err := loadTokensFromYaml(tokenYamlPath)
+func newMockAuthenticator(passwordYamlPath, usersYamlPath string) (*mockAuthenticator, error) {
+	passwords, err := loadPasswordsFromYaml(passwordYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load tokens from yaml: %w", err)
+		return nil, fmt.Errorf("failed to load passwords from yaml: %w", err)
 	}
 	users, err := loadUsersFromYaml(usersYamlPath)
 	if err != nil {
@@ -18,8 +18,8 @@ func newMockAuthenticator(tokenYamlPath, usersYamlPath string) (*mockAuthenticat
 	}
 
 	return &mockAuthenticator{
-		users:  users,
-		tokens: tokens,
+		users:     users,
+		passwords: passwords,
 	}, nil
 }
 
@@ -40,10 +40,10 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	}
 	a.users.usersMap[len(a.users.usersMap)+1] = newUser
 
-	// Generating and storing a new token for the user.
-	_, err := a.newToken(newUser.UserID)
+	// Generating and storing a new password for the user.
+	_, err := a.newPassword(newUser.UserID)
 	if err != nil {
-		return newUser.UserID, fmt.Errorf("failed to create a token for user %s, %s: %w", name, role, err)
+		return newUser.UserID, fmt.Errorf("failed to create a password for user %s, %s: %w", name, role, err)
 	}
 
 	return newUser.UserID, nil
@@ -111,32 +111,32 @@ func (a *mockAuthenticator) deleteUser(userID int) error {
 		return fmt.Errorf("error updating the users repo: %w", err)
 	}
 
-	// Removing the token and updating the token repo.
-	delete(a.tokens.tokensMap, userID)
-	if err := a.tokens.saveTokensToYaml(); err != nil {
-		return fmt.Errorf("error updating the token repo: %w", err)
+	// Removing the password and updating the password repo.
+	delete(a.passwords.passwordsMap, userID)
+	if err := a.passwords.savePasswordsToYaml(); err != nil {
+		return fmt.Errorf("error updating the password repo: %w", err)
 	}
 
 	return nil
 }
 
-func (a *mockAuthenticator) validateToken(userID int, token string) bool {
-	expectedToken, exists := a.tokens.tokensMap[userID]
-	if !exists || expectedToken != token {
+func (a *mockAuthenticator) validatePassword(userID int, password string) bool {
+	expectedpassword, exists := a.passwords.passwordsMap[userID]
+	if !exists || expectedpassword != password {
 		return false
 	}
 
 	return true
 }
 
-// Creates a new token and writes it to the token repo.
-// Wrapper for tokenYaml.generateToken
-func (a *mockAuthenticator) newToken(userID int) (string, error) {
+// Creates a new password and writes it to the password repo.
+// Wrapper for passwordYaml.generatepassword
+func (a *mockAuthenticator) newPassword(userID int) (string, error) {
 
-	err := a.tokens.generateTokenForYaml(userID)
+	err := a.passwords.generatePasswordForYaml(userID)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate and store a new token: %w", err)
+		return "", fmt.Errorf("failed to generate and store a new password: %w", err)
 	}
 
-	return a.tokens.tokensMap[userID], nil
+	return a.passwords.passwordsMap[userID], nil
 }
