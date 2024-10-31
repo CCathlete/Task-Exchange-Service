@@ -1,2 +1,9 @@
 1:
-  user_id: 1
+    userid: 1
+    name: Ken Cat
+    email: kctest@example.com
+    role: admin
+    balance: 0
+    joinedat: "2024-01-01"
+    leftat: ""
+    lastupdated: 2024-10-31 15:19:06.479569551 +0100 CET m=+0.000578946

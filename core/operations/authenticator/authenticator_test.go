@@ -10,7 +10,7 @@ import (
 func TestCreateUser(t *testing.T) {
 	// Initialising the mock authenticator.
 	auth, err := newMockAuthenticator(
-		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/tokens.yaml",
+		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/passwords.yaml",
 		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/users.yaml",
 	)
 	if err != nil {

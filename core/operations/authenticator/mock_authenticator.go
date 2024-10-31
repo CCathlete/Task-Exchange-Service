@@ -29,16 +29,16 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	defer a.mu.Unlock()
 
 	newUser := entities.User{
-		UserID:      len(a.users.usersMap) + 1,
+		UserID:      len(a.users.usersMap),
 		Name:        name,
 		Email:       email,
 		Role:        role,
 		Balance:     float64(0),
 		JoinedAt:    joinedAt,
 		LeftAt:      "",
-		LastUpdated: time.Now().Format("YYYY-MM-DD HH:MM"),
+		LastUpdated: time.Now().String(),
 	}
-	a.users.usersMap[len(a.users.usersMap)+1] = newUser
+	a.users.usersMap[len(a.users.usersMap)] = newUser
 
 	// Updating the users yaml.
 	a.users.saveUsersToYaml()
@@ -89,7 +89,7 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 	user.Email = updatedUser.Email
 	user.Role = updatedUser.Role
 	user.LeftAt = updatedUser.LeftAt
-	user.LastUpdated = time.Now().Format("YYYY-MM-DD HH:MM")
+	user.LastUpdated = time.Now().String()
 
 	// Saving the changes.
 	a.users.usersMap[updatedUser.UserID] = user
