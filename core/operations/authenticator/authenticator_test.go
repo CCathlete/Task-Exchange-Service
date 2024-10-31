@@ -9,7 +9,10 @@ import (
 
 func TestCreateUser(t *testing.T) {
 	// Initialising the mock authenticator.
-	auth, err := newMockAuthenticator("~/Repos/Task-Exchange-Service/core/operations/authenticator/tokens.yaml")
+	auth, err := newMockAuthenticator(
+		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/tokens.yaml",
+		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/users.yaml",
+	)
 	if err != nil {
 		t.Errorf("Error creating a new authenticator instance: %v", err)
 	}

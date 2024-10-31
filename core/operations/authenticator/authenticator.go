@@ -1,6 +1,7 @@
 package authenticator
 
 import (
+	"aTES/core/entities"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -19,7 +20,7 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 			fmt.Errorf("error while rading yaml: %w", err)
 	}
 
-	err = yaml.Unmarshal(data, &tokens)
+	err = yaml.Unmarshal(data, &tokens.tokensMap)
 	if err != nil {
 		return tokenYaml{tokensMap: make(map[int]string)},
 			fmt.Errorf("error while loading tokens from yaml: %w", err)
@@ -38,6 +39,40 @@ func (tokens *tokenYaml) saveTokensToYaml() error {
 	encoder := yaml.NewEncoder(file)
 	if err := encoder.Encode(tokens.tokensMap); err != nil {
 		return fmt.Errorf("error writing data to fole %s: %w", tokens.location, err)
+	}
+
+	return nil
+}
+
+func loadUsersFromYaml(usersYamlPath string) (usersYaml, error) {
+	var users usersYaml
+	users.location = usersYamlPath
+
+	data, err := os.ReadFile(usersYamlPath)
+	if err != nil {
+		return usersYaml{usersMap: make(map[int]entities.User)},
+			fmt.Errorf("error while rading yaml: %w", err)
+	}
+
+	err = yaml.Unmarshal(data, &users.usersMap)
+	if err != nil {
+		return usersYaml{usersMap: make(map[int]entities.User)},
+			fmt.Errorf("error while loading tokens from yaml: %w", err)
+	}
+
+	return users, nil
+}
+
+func (users *usersYaml) saveUsersToYaml() error {
+	file, err := os.Create(users.location)
+	if err != nil {
+		return fmt.Errorf("error recreating the file %s: %w", users.location, err)
+	}
+	defer file.Close()
+
+	encoder := yaml.NewEncoder(file)
+	if err := encoder.Encode(users.usersMap); err != nil {
+		return fmt.Errorf("error writing data to fole %s: %w", users.location, err)
 	}
 
 	return nil
@@ -66,11 +101,11 @@ func (ty *tokenYaml) generateTokenForYaml(userID int) error {
 }
 
 // Creates a mock authenticator from a pre declared instance and starts the server.
-func InitAuthServer(host, tokenYamlPath string, port int) error {
+func InitAuthServer(host, tokenYamlPath, usersYamlPath string, port int) error {
 
 	// Invoking the constructor and starting the server.
 	var maP *mockAuthenticator
-	maP, err := newMockAuthenticator(tokenYamlPath)
+	maP, err := newMockAuthenticator(tokenYamlPath, usersYamlPath)
 	if err != nil {
 		return fmt.Errorf("error starting the authenticator using yaml file at %s: %w",
 			tokenYamlPath, err)

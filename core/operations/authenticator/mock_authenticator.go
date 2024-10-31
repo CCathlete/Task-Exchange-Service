@@ -7,14 +7,18 @@ import (
 	"time"
 )
 
-func newMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
+func newMockAuthenticator(tokenYamlPath, usersYamlPath string) (*mockAuthenticator, error) {
 	tokens, err := loadTokensFromYaml(tokenYamlPath)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to load tokens from yaml: %w", err)
 	}
+	users, err := loadUsersFromYaml(usersYamlPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load users from yaml: %w", err)
+	}
 
 	return &mockAuthenticator{
-		users:  make(map[int]entities.User),
+		users:  &users,
 		tokens: &tokens,
 	}, nil
 }
@@ -25,7 +29,7 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	defer a.mu.Unlock()
 
 	newUser := entities.User{
-		UserID:      len(a.users) + 1,
+		UserID:      len(a.users.usersMap) + 1,
 		Name:        name,
 		Email:       email,
 		Role:        role,
@@ -34,7 +38,7 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 		LeftAt:      "",
 		LastUpdated: time.Now().Format("YYYY-MM-DD HH:MM"),
 	}
-	a.users[len(a.users)+1] = newUser
+	a.users.usersMap[len(a.users.usersMap)+1] = newUser
 
 	// Generating and storing a new token for the user.
 	_, err := a.newToken(newUser.UserID)
@@ -57,7 +61,7 @@ func (a *mockAuthenticator) getUser(userID int) (entities.User, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	user, exists := a.users[userID]
+	user, exists := a.users.usersMap[userID]
 	if !exists {
 		return entities.User{}, fmt.Errorf("the user doesn't exist")
 	}
@@ -71,7 +75,7 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 	defer a.mu.Unlock()
 
 	// Validating that the user exists.
-	user, exists := a.users[updatedUser.UserID]
+	user, exists := a.users.usersMap[updatedUser.UserID]
 	if !exists {
 		return fmt.Errorf("User does not exist.")
 	}
@@ -84,7 +88,7 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 	user.LastUpdated = time.Now().Format("YYYY-MM-DD HH:MM")
 
 	// Saving the changes.
-	a.users[updatedUser.UserID] = user
+	a.users.usersMap[updatedUser.UserID] = user
 
 	return nil
 }
@@ -95,13 +99,13 @@ func (a *mockAuthenticator) deleteUser(userID int) error {
 	defer a.mu.Unlock()
 
 	// Validating that the user exists.
-	_, exists := a.users[userID]
+	_, exists := a.users.usersMap[userID]
 	if !exists {
 		return fmt.Errorf("User does not exist.")
 	}
 
 	// Deteling the user.
-	delete(a.users, userID)
+	delete(a.users.usersMap, userID)
 
 	// Removing the token and updating the token repo.
 	delete(a.tokens.tokensMap, userID)

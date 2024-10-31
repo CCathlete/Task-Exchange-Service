@@ -19,8 +19,13 @@ type tokenYaml struct {
 	tokensMap map[int]string `yaml:"tokens"`
 }
 
+type usersYaml struct {
+	location string                // Path to the actual yaml file.
+	usersMap map[int]entities.User `yaml:"users"`
+}
+
 type mockAuthenticator struct {
-	users  map[int]entities.User
+	users  *usersYaml
 	tokens *tokenYaml // The yaml file is loaded here for fast drawing.
 	mu     sync.Mutex
 }
