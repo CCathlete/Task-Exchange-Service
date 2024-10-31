@@ -40,6 +40,9 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	}
 	a.users.usersMap[len(a.users.usersMap)+1] = newUser
 
+	// Updating the users yaml.
+	a.users.saveUsersToYaml()
+
 	// Generating and storing a new password for the user.
 	_, err := a.newPassword(newUser.UserID)
 	if err != nil {
