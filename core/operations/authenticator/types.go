@@ -21,10 +21,10 @@ type tokenYaml struct {
 
 type mockAuthenticator struct {
 	users  map[int]entities.User
-	tokens tokenYaml // The yaml file is loaded here for fast drawing.
+	tokens *tokenYaml // The yaml file is loaded here for fast drawing.
 	mu     sync.Mutex
 }
 
 type tokenRepo interface {
-	GenerateToken(userID int) error // Creates a token and pushes it to the repo.
+	generateToken(userID int) error // Creates a token and pushes it to the repo.
 }

@@ -29,7 +29,7 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 	return tokens, nil
 }
 
-func (tokens tokenYaml) saveTokensToYaml() error {
+func (tokens *tokenYaml) saveTokensToYaml() error {
 	file, err := os.Create(tokens.location)
 	if err != nil {
 		return fmt.Errorf("Error recreating the file %s: %w", tokens.location, err)
@@ -45,7 +45,7 @@ func (tokens tokenYaml) saveTokensToYaml() error {
 }
 
 // Creates a token, refreshes the local storage of it and writes it to the token yaml file.
-func (ty tokenYaml) generateToken(userID int) error {
+func (ty *tokenYaml) generateTokenForYaml(userID int) error {
 
 	// Generating a unique token.
 	tokenBytes := make([]byte, 16) // 128 bit long token.

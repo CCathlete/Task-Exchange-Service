@@ -15,7 +15,7 @@ func newMockAuthenticator(tokenYamlPath string) (*mockAuthenticator, error) {
 
 	return &mockAuthenticator{
 		users:  make(map[int]entities.User),
-		tokens: tokens,
+		tokens: &tokens,
 	}, nil
 }
 
@@ -124,9 +124,8 @@ func (a *mockAuthenticator) validateToken(userID int, token string) bool {
 // Creates a new token and writes it to the token repo.
 // Wrapper for tokenYaml.generateToken
 func (a *mockAuthenticator) newToken(userID int) (string, error) {
-	// TODO: add type check to check if tokenRepo is of type tokenYaml.
 
-	err := a.tokens.generateToken(userID)
+	err := a.tokens.generateTokenForYaml(userID)
 	if err != nil {
 		return "", fmt.Errorf("Failed to generate and store a new token: %w", err)
 	}
