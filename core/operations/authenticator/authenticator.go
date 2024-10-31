@@ -1,7 +1,6 @@
-package Authenticator
+package authenticator
 
 import (
-	"aTES/core/entities"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -17,13 +16,13 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 	data, err := os.ReadFile(tokenYamlPath)
 	if err != nil {
 		return tokenYaml{tokensMap: make(map[int]string)},
-			fmt.Errorf("Error while rading yaml: %w", err)
+			fmt.Errorf("error while rading yaml: %w", err)
 	}
 
 	err = yaml.Unmarshal(data, &tokens)
 	if err != nil {
 		return tokenYaml{tokensMap: make(map[int]string)},
-			fmt.Errorf("Error while loading tokens from yaml: %w", err)
+			fmt.Errorf("error while loading tokens from yaml: %w", err)
 	}
 
 	return tokens, nil
@@ -32,13 +31,13 @@ func loadTokensFromYaml(tokenYamlPath string) (tokenYaml, error) {
 func (tokens *tokenYaml) saveTokensToYaml() error {
 	file, err := os.Create(tokens.location)
 	if err != nil {
-		return fmt.Errorf("Error recreating the file %s: %w", tokens.location, err)
+		return fmt.Errorf("error recreating the file %s: %w", tokens.location, err)
 	}
 	defer file.Close()
 
 	encoder := yaml.NewEncoder(file)
 	if err := encoder.Encode(tokens.tokensMap); err != nil {
-		return fmt.Errorf("Error writing data to fole %s: %w", tokens.location, err)
+		return fmt.Errorf("error writing data to fole %s: %w", tokens.location, err)
 	}
 
 	return nil
@@ -50,7 +49,7 @@ func (ty *tokenYaml) generateTokenForYaml(userID int) error {
 	// Generating a unique token.
 	tokenBytes := make([]byte, 16) // 128 bit long token.
 	if _, err := rand.Read(tokenBytes); err != nil {
-		return fmt.Errorf("Error generating bytes for a new token: %w", err)
+		return fmt.Errorf("error generating bytes for a new token: %w", err)
 	}
 	newToken := hex.EncodeToString(tokenBytes) // Converting from binary to hexadecimal and turns into a string.
 
@@ -60,7 +59,7 @@ func (ty *tokenYaml) generateTokenForYaml(userID int) error {
 	// Updating the token repo (yaml).
 
 	if err := ty.saveTokensToYaml(); err != nil {
-		return fmt.Errorf("Error while undating token repo with the new token: %w", err)
+		return fmt.Errorf("error while undating token repo with the new token: %w", err)
 	}
 
 	return nil
@@ -73,13 +72,13 @@ func InitAuthServer(host, tokenYamlPath string, port int) error {
 	var maP *mockAuthenticator
 	maP, err := newMockAuthenticator(tokenYamlPath)
 	if err != nil {
-		return fmt.Errorf("Error starting the authenticator using yaml file at %s: %w",
+		return fmt.Errorf("error starting the authenticator using yaml file at %s: %w",
 			tokenYamlPath, err)
 	}
 
 	err = maP.startServer(host, port)
 	if err != nil {
-		return fmt.Errorf("Error starting the authentication server: %w", err)
+		return fmt.Errorf("error starting the authentication server: %w", err)
 	}
 
 	return nil
@@ -87,7 +86,7 @@ func InitAuthServer(host, tokenYamlPath string, port int) error {
 
 // General interface functions.
 
-func GetUser(au Authenticator, userID int) (entities.User, error)
-func UpdateUser(au Authenticator, userID int, name, email, role, leftAt string) error
-func DeleteUser(au Authenticator, userID int) error
-func ValidateToken(au Authenticator, userID int, token string) bool
+// func GetUser(au Authenticator, userID int) (entities.User, error)
+// func UpdateUser(au Authenticator, userID int, name, email, role, leftAt string) error
+// func DeleteUser(au Authenticator, userID int) error
+// func ValidateToken(au Authenticator, userID int, token string) bool

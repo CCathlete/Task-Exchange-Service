@@ -1,4 +1,4 @@
-package Authenticator
+package authenticator
 
 import (
 	"aTES/core/entities"
