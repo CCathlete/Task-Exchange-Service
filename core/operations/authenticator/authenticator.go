@@ -100,25 +100,6 @@ func (ty *passwordYaml) generatePasswordForYaml(userID int) error {
 	return nil
 }
 
-// Creates a mock authenticator from a pre declared instance and starts the server.
-func InitAuthServer(host, passwordYamlPath, usersYamlPath string, port int) error {
-
-	// Invoking the constructor and starting the server.
-	var maP *mockAuthenticator
-	maP, err := newMockAuthenticator(passwordYamlPath, usersYamlPath)
-	if err != nil {
-		return fmt.Errorf("error starting the authenticator using yaml file at %s: %w",
-			passwordYamlPath, err)
-	}
-
-	err = maP.startServer(host, port)
-	if err != nil {
-		return fmt.Errorf("error starting the authentication server: %w", err)
-	}
-
-	return nil
-}
-
 // General interface functions.
 
 // func GetUser(au Authenticator, userID int) (entities.User, error)

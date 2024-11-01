@@ -3,11 +3,10 @@ package authenticator
 import (
 	"aTES/core/entities"
 	"fmt"
-	"net/http"
 	"time"
 )
 
-func newMockAuthenticator(passwordYamlPath, usersYamlPath string) (*mockAuthenticator, error) {
+func NewMockAuthenticator(passwordYamlPath, usersYamlPath string) (*MockAuthenticator, error) {
 	passwords, err := loadPasswordsFromYaml(passwordYamlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load passwords from yaml: %w", err)
@@ -17,19 +16,19 @@ func newMockAuthenticator(passwordYamlPath, usersYamlPath string) (*mockAuthenti
 		return nil, fmt.Errorf("failed to load users from yaml: %w", err)
 	}
 
-	return &mockAuthenticator{
+	return &MockAuthenticator{
 		users:     users,
 		passwords: passwords,
 	}, nil
 }
 
-// Creating a new user using the mock authenticator.
-func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int, error) {
+// Creating a new user using the Mock authenticator.
+func (a *MockAuthenticator) createUser(name, role, email, joinedAt string) (int, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
 	newUser := entities.User{
-		UserID:      len(a.users.usersMap),
+		UserID:      len(a.users.usersMap) + 1,
 		Name:        name,
 		Email:       email,
 		Role:        role,
@@ -38,7 +37,7 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 		LeftAt:      "",
 		LastUpdated: time.Now().String(),
 	}
-	a.users.usersMap[len(a.users.usersMap)] = newUser
+	a.users.usersMap[len(a.users.usersMap)+1] = newUser
 
 	// Updating the users yaml.
 	a.users.saveUsersToYaml()
@@ -52,16 +51,8 @@ func (a *mockAuthenticator) createUser(name, role, email, joinedAt string) (int,
 	return newUser.UserID, nil
 }
 
-func (a *mockAuthenticator) startServer(host string, port int) error {
-	http.HandleFunc("/create_user", a.createUserHandler)
-	http.HandleFunc("/get_user", a.getUserHandler)
-	http.HandleFunc("/update_user", a.updateUserHandler)
-	http.HandleFunc("/delete_user", a.deleteUserHandler)
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
-}
-
 // Returns the entities.User struct for an EXISTING user.
-func (a *mockAuthenticator) getUser(userID int) (entities.User, error) {
+func (a *MockAuthenticator) getUser(userID int) (entities.User, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -74,7 +65,7 @@ func (a *mockAuthenticator) getUser(userID int) (entities.User, error) {
 }
 
 // Updates an existing user.
-func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
+func (a *MockAuthenticator) updateUser(updatedUser entities.User) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -98,7 +89,7 @@ func (a *mockAuthenticator) updateUser(updatedUser entities.User) error {
 }
 
 // Sends a delete request to remove data of a user.
-func (a *mockAuthenticator) deleteUser(userID int) error {
+func (a *MockAuthenticator) deleteUser(userID int) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -123,7 +114,7 @@ func (a *mockAuthenticator) deleteUser(userID int) error {
 	return nil
 }
 
-func (a *mockAuthenticator) validatePassword(userID int, password string) bool {
+func (a *MockAuthenticator) validatePassword(userID int, password string) bool {
 	expectedpassword, exists := a.passwords.passwordsMap[userID]
 	if !exists || expectedpassword != password {
 		return false
@@ -134,7 +125,7 @@ func (a *mockAuthenticator) validatePassword(userID int, password string) bool {
 
 // Creates a new password and writes it to the password repo.
 // Wrapper for passwordYaml.generatepassword
-func (a *mockAuthenticator) newPassword(userID int) (string, error) {
+func (a *MockAuthenticator) newPassword(userID int) (string, error) {
 
 	err := a.passwords.generatePasswordForYaml(userID)
 	if err != nil {

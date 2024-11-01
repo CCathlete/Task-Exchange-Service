@@ -9,7 +9,7 @@ import (
 
 func TestCreateUser(t *testing.T) {
 	// Initialising the mock authenticator.
-	auth, err := newMockAuthenticator(
+	auth, err := NewMockAuthenticator(
 		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/passwords.yaml",
 		"/home/ccat/Repos/Task-Exchange-Service/core/operations/authenticator/users.yaml",
 	)
@@ -25,7 +25,7 @@ func TestCreateUser(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	// Calling the handler.
-	auth.createUserHandler(w, req)
+	auth.CreateUserHandler(w, req)
 
 	// Checking the status code.
 	response := w.Result()

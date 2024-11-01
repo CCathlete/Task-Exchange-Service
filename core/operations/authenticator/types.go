@@ -24,7 +24,7 @@ type usersYaml struct {
 	usersMap map[int]entities.User `yaml:"users"`
 }
 
-type mockAuthenticator struct {
+type MockAuthenticator struct {
 	users     *usersYaml
 	passwords *passwordYaml // The yaml file is loaded here for fast drawing.
 	mu        sync.Mutex

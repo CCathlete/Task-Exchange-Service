@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (a *mockAuthenticator) createUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a *MockAuthenticator) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Making sure that we get a post request.
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -38,7 +38,7 @@ func (a *mockAuthenticator) createUserHandler(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(response)
 }
 
-func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a *MockAuthenticator) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Making sure that we got a get request.
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -78,7 +78,7 @@ func (a *mockAuthenticator) getUserHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (a *mockAuthenticator) updateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a *MockAuthenticator) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Making sure that we got a get request.
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -113,7 +113,7 @@ func (a *mockAuthenticator) updateUserHandler(w http.ResponseWriter, r *http.Req
 	w.Write([]byte("User successfully updated"))
 }
 
-func (a *mockAuthenticator) deleteUserHandler(w http.ResponseWriter, r *http.Request) {
+func (a *MockAuthenticator) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Making sure that we got a delete request.
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
