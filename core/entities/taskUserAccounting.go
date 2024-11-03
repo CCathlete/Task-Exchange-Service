@@ -23,12 +23,14 @@ type User struct { // We send this in http requests for the authorisation system
 	LastUpdated string  `json:"last_updated"` // Timestamp of last update time.
 }
 
-type AccountingRecord struct {
-	RecordID     int     `gorm:"primaryKey;autoIncrement"` // A unique ID for this record.
+type TaskFinanceInfo struct {
+	TaskID       int     `gorm:"primaryKey;autoIncrement"` // The ID of the task associated with this reduction/ payment.
 	UserID       int     `gorm:"index;foreignKey:UserID"`  // The ID of the user associated with this record.
-	TaskID       int     `gorm:"index;foreignKey:TaskID"`  // The ID of the task associated with this reduction/ payment.
-	Amount       float64 `gorm:"type:decimal(10, 2)"`      // Negative for reduction and positive for payment.
+	kmount       float64 `gorm:"type:decimal(10, 2)"`      // Negative for reduction and positive for payment.
 	Status       string  `gorm:"type:varchar(50)"`         // Assigned/ Completed.
 	CreationTime string  `gorm:"type:timestamp"`           // Timestamp of the creation time of this record.
 	LastUpdated  string  `gorm:"type:timestamp"`           // Timestamp of last update time.
 }
+
+// TODO: Change the type of the money amounts into something from the decimal library.
+// TODO: An accounting record should be a monthly balance, amount of tasks assigned, amount of task started and amount of tasks completed.

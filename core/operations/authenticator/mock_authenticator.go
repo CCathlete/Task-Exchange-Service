@@ -3,7 +3,10 @@ package authenticator
 import (
 	"aTES/core/entities"
 	"fmt"
+	"os"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func NewMockAuthenticator(passwordYamlPath, usersYamlPath string) (*MockAuthenticator, error) {
@@ -20,6 +23,19 @@ func NewMockAuthenticator(passwordYamlPath, usersYamlPath string) (*MockAuthenti
 		users:     users,
 		passwords: passwords,
 	}, nil
+}
+
+// Generating a new JWT for a given userID and role
+func (a *MockAuthenticator) GenerateJWT(userID int, role string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(time.Hour * 72).Unix(), // Token is valid for 72 hours.
+	}
+
+	jwtKey := []byte(os.Getenv("JWT_KET_TES_APP"))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtKey)
 }
 
 // Creating a new user using the Mock authenticator.
