@@ -38,6 +38,27 @@ func (a *MockAuthenticator) GenerateJWT(userID int, role string) (string, error)
 	return token.SignedString(jwtKey)
 }
 
+func (a *MockAuthenticator) ValidateJWT(tokenStr string) (int, string, error) {
+	var claims jwt.MapClaims
+
+	// Parsing the token.
+	token, err := jwt.ParseWithClaims(tokenStr, &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_KEY_TES_APP")), nil
+	})
+
+	if err != nil || !token.Valid {
+		return 0, "", fmt.Errorf("invalid token: %w", err)
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	role, okRole := claims["role"].(string)
+	if !ok || !okRole {
+		return 0, "", fmt.Errorf("invalid claims in token")
+	}
+
+	return int(userID), role, nil
+}
+
 // Creating a new user using the Mock authenticator.
 func (a *MockAuthenticator) createUser(name, role, email, joinedAt string) (int, error) {
 	a.mu.Lock()
