@@ -9,17 +9,39 @@ import (
 )
 
 func (a *MockAuthenticator) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Calling checkTokenAndLogin to validate the login credentials + token or trigger a login.
+	loginUserID, loginRole, err := a.checkTokenAndLogin(w, r)
+
+	// Checking if the logged in user exists.
+	if _, exists := a.users.usersMap[loginUserID]; !exists {
+		http.Error(w, fmt.Sprintf("Login does not exist: %v", err), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unauthorised: %v", err), http.StatusUnauthorized)
+		return
+	}
+
+	// Checking that the login was made by an admin.
+	if loginRole != "admin" {
+		http.Error(w, "Forbidden: unauthorised access.", http.StatusForbidden)
+		return
+	}
+
 	// Making sure that we get a post request.
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
 	// Creating a temporary structure for decoding the request body's json.
-	var reqBody struct {
-		Name     string `json:"name"`
-		Role     string `json:"role"`
-		Email    string `json:"email"`
-		JoinedAt string `json:"joined_at"`
+	var reqBody struct { // Target user information sits inside the request's body.
+		Target struct {
+			Name     string `json:"name"`
+			Role     string `json:"role"`
+			Email    string `json:"email"`
+			JoinedAt string `json:"joined_at"`
+		} `json:"target"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
@@ -27,7 +49,7 @@ func (a *MockAuthenticator) CreateUserHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	// Using the fields of the temporary struct in the createUser method.
-	userID, err := a.createUser(reqBody.Name, reqBody.Role, reqBody.Email, reqBody.JoinedAt)
+	userID, err := a.createUser(reqBody.Target.Name, reqBody.Target.Role, reqBody.Target.Email, reqBody.Target.JoinedAt)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error creating user: %v", err), http.StatusInternalServerError)
 		return
@@ -40,6 +62,19 @@ func (a *MockAuthenticator) CreateUserHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (a *MockAuthenticator) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Calling checkTokenAndLogin to validate the login credentials + token or trigger a login.
+	loginUserID, _, err := a.checkTokenAndLogin(w, r)
+
+	// Checking if the logged in user exists.
+	if _, exists := a.users.usersMap[loginUserID]; !exists {
+		http.Error(w, fmt.Sprintf("Login does not exist: %v", err), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unauthorised: %v", err), http.StatusUnauthorized)
+		return
+	}
+
 	// Making sure that we got a get request.
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -47,8 +82,10 @@ func (a *MockAuthenticator) GetUserHandler(w http.ResponseWriter, r *http.Reques
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		UserID   int    `json:"user_id"`
-		Password string `json:"password"`
+		Target struct {
+			UserID   int    `json:"user_id"`
+			Password string `json:"password"`
+		}
 	}
 
 	// Decoding the request's body to get userID and password.
@@ -58,14 +95,14 @@ func (a *MockAuthenticator) GetUserHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Validating the password.
-	passwordIsValid := a.validatePassword(reqBody.UserID, reqBody.Password)
+	passwordIsValid := a.validatePassword(reqBody.Target.UserID, reqBody.Target.Password)
 	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}
 
 	// Getting the user's information.
-	user, err := a.getUser(reqBody.UserID)
+	user, err := a.getUser(reqBody.Target.UserID)
 	if err != nil {
 		http.Error(w, "Error retrieving user's information.", http.StatusNotFound)
 		return
@@ -80,6 +117,25 @@ func (a *MockAuthenticator) GetUserHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (a *MockAuthenticator) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Calling checkTokenAndLogin to validate the login credentials + token or trigger a login.
+	loginUserID, loginRole, err := a.checkTokenAndLogin(w, r)
+
+	// Checking if the logged in user exists.
+	if _, exists := a.users.usersMap[loginUserID]; !exists {
+		http.Error(w, fmt.Sprintf("Login does not exist: %v", err), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unauthorised: %v", err), http.StatusUnauthorized)
+		return
+	}
+
+	// Checking that the login was made by an admin.
+	if loginRole != "admin" {
+		http.Error(w, "Forbidden: unauthorised access.", http.StatusForbidden)
+		return
+	}
+
 	// Making sure that we got a get request.
 	if r.Method != http.MethodGet {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -87,8 +143,10 @@ func (a *MockAuthenticator) UpdateUserHandler(w http.ResponseWriter, r *http.Req
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		Password string        `json:"name"`
-		User     entities.User `json:"user"` // User has json tags of its own.
+		Target struct {
+			Password string        `json:"name"`
+			User     entities.User `json:"user"` // User has json tags of its own.
+		}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
@@ -96,14 +154,14 @@ func (a *MockAuthenticator) UpdateUserHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	// Validating the password.
-	passwordIsValid := a.validatePassword(reqBody.User.UserID, reqBody.Password)
+	passwordIsValid := a.validatePassword(reqBody.Target.User.UserID, reqBody.Target.Password)
 	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}
 
 	// Updating the user.
-	err := a.updateUser(reqBody.User)
+	err = a.updateUser(reqBody.Target.User)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error updating user: %v", err), http.StatusNotFound)
 		return
@@ -115,6 +173,25 @@ func (a *MockAuthenticator) UpdateUserHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (a *MockAuthenticator) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Calling checkTokenAndLogin to validate the login credentials + token or trigger a login.
+	loginUserID, loginRole, err := a.checkTokenAndLogin(w, r)
+
+	// Checking if the logged in user exists.
+	if _, exists := a.users.usersMap[loginUserID]; !exists {
+		http.Error(w, fmt.Sprintf("Login does not exist: %v", err), http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unauthorised: %v", err), http.StatusUnauthorized)
+		return
+	}
+
+	// Checking that the login was made by an admin.
+	if loginRole != "admin" {
+		http.Error(w, "Forbidden: unauthorised access.", http.StatusForbidden)
+		return
+	}
+
 	// Making sure that we got a delete request.
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -122,8 +199,10 @@ func (a *MockAuthenticator) DeleteUserHandler(w http.ResponseWriter, r *http.Req
 
 	// Creating a temporary structure for decoding the request body's json.
 	var reqBody struct {
-		Password string `json:"name"`
-		UserID   int    `json:"user_id"`
+		Target struct {
+			Password string `json:"name"`
+			UserID   int    `json:"user_id"`
+		}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
 		http.Error(w, "Error decoding the request's body: %w", http.StatusBadRequest)
@@ -131,14 +210,14 @@ func (a *MockAuthenticator) DeleteUserHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	// Validating the password.
-	passwordIsValid := a.validatePassword(reqBody.UserID, reqBody.Password)
+	passwordIsValid := a.validatePassword(reqBody.Target.UserID, reqBody.Target.Password)
 	if !passwordIsValid {
 		http.Error(w, "Unauthorised acess", http.StatusUnauthorized)
 		return
 	}
 
 	// Deleting the user.
-	err := a.deleteUser(reqBody.UserID)
+	err = a.deleteUser(reqBody.Target.UserID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error deleting user: %v", err), http.StatusNotFound)
 		return
@@ -151,7 +230,7 @@ func (a *MockAuthenticator) DeleteUserHandler(w http.ResponseWriter, r *http.Req
 
 // Checking if the token is provided in the header, validating it and triggering login if there's no valid token.
 func (a *MockAuthenticator) checkTokenAndLogin(w http.ResponseWriter, r *http.Request) (int, string, error) {
-	// Extract the token fro the authorisation header.
+	// Extract the token from the authorisation header.
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
 		// No token was found, triggering login.
@@ -167,7 +246,8 @@ func (a *MockAuthenticator) checkTokenAndLogin(w http.ResponseWriter, r *http.Re
 	// Validate the JWT token.
 	userID, role, err := a.ValidateJWT(tokenParts[1])
 	if err != nil {
-		return 0, "", fmt.Errorf("invalid or expired token: %w", err)
+		// Triggering login if token is not valid/ expired.
+		return a.login(w, r)
 	}
 
 	// Token is valid, return the userID and role.
@@ -179,9 +259,11 @@ func (a *MockAuthenticator) checkTokenAndLogin(w http.ResponseWriter, r *http.Re
 func (a *MockAuthenticator) login(w http.ResponseWriter, r *http.Request) (int, string, error) {
 	// Login information should contain the user credential: { "user_id": <userID>, "password": <password> }
 	var loginData struct {
-		UserID   int    `json:"user_id"`
-		Role     string `json:"role"`
-		Password string `json:"password"`
+		Login struct {
+			UserID   int    `json:"user_id"`
+			Role     string `json:"role"`
+			Password string `json:"password"`
+		} `json:"login"`
 	}
 
 	// Parsing the login data from the request's body.
@@ -191,13 +273,13 @@ func (a *MockAuthenticator) login(w http.ResponseWriter, r *http.Request) (int, 
 	}
 
 	// Validating the password.
-	if !a.validatePassword(loginData.UserID, loginData.Password) {
+	if !a.validatePassword(loginData.Login.UserID, loginData.Login.Password) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		return 0, "", fmt.Errorf("wrong password for user %d", loginData.UserID)
+		return 0, "", fmt.Errorf("wrong password for user %d", loginData.Login.UserID)
 	}
 
 	// Generatig a new JWT for the user after a successful login.
-	token, err := a.GenerateJWT(loginData.UserID, loginData.Role)
+	token, err := a.GenerateJWT(loginData.Login.UserID, loginData.Login.Role)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return 0, "", fmt.Errorf("failed to generate JWT: %w", err)
@@ -208,5 +290,5 @@ func (a *MockAuthenticator) login(w http.ResponseWriter, r *http.Request) (int, 
 	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, token)))
 
 	// Returning userID and role to be easily available for further use.
-	return loginData.UserID, loginData.Role, nil
+	return loginData.Login.UserID, loginData.Login.Role, nil
 }
